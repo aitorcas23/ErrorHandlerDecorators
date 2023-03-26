@@ -1,7 +1,18 @@
-from decorators.base_error_handler import handle_error
+from func_attributes import FuncAttributes
+from decorators.error_handlers import custom_error_handler
 
 
-@handle_error
+format = ["An error occurred in line ",
+          FuncAttributes.line,
+          " in procedure ",
+          FuncAttributes.name,
+          " in module ",
+          FuncAttributes.module,
+          ":\n",
+          FuncAttributes.error]
+
+
+@custom_error_handler(format=format, color="Error")
 def a_function(a, b):
     return (a / b)
 
