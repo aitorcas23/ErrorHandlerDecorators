@@ -40,6 +40,6 @@ def default_error_handler(func: Callable[P, T]) -> Callable[P, T]:
             line = tb_next.tb_lineno
             logging.error(f"""An error occurred in line {line} in procedure {procedure} in module {module}:
 {type(e).__name__}: {e}""")
-            
+
             raise e
     return add_try_catch
