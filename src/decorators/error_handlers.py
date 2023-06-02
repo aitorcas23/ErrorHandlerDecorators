@@ -1,30 +1,16 @@
-from typing import Callable, Literal
+"""Error handling decorators."""
 import os
-
-from func_attributes import code_to_value
-
+from typing import Callable, TypeVar, ParamSpec
+import logging
 
 COLORS = {"Info": "", "Warning": '\033[93m', "Error": '\033[91m'}
 END = '\033[0m'
 
-
-def custom_error_handler(format: list | tuple, color: Literal["Info", "Warning", "Error"] = "Info"):
-    def handle_error(func: Callable):
-        def add_try_catch(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                message = COLORS[color]
-                for value in format:
-                    if not isinstance(value, str):
-                        value = code_to_value[value](e)
-                    message += str(value)
-                return message + END
-        return add_try_catch
-    return handle_error
+T = TypeVar('T')
+P = ParamSpec("P")
 
 
-def default_error_handler(func):
+def default_error_handler(func: Callable[P, T]) -> Callable[P, T]:
     """Wrap a function with a try-except block to handle any exceptions raised.
 
     This decorator prints the error message, the name of the module where the function is defined,
@@ -32,18 +18,28 @@ def default_error_handler(func):
     This can be useful for debugging and logging purposes.
 
     Example:
-    ```
-    @handle_error
-    def some_function():
-    ```
+        ```
+        @default_error_handler
+        def some_function():
+        ```
     """
-    def add_try_catch(*args, **kwargs):
+    def add_try_catch(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            procedure = e.__traceback__.tb_next.tb_frame.f_code.co_name
-            module = os.path.basename(e.__traceback__.tb_next.tb_frame.f_code.co_filename).split(".")[0]
-            line = e.__traceback__.tb_next.tb_lineno
-            print(f"""{COLORS['Warning']}An error occurred in line {line} in procedure {procedure} in module {module}:
-{e}{END}""")
+            traceback = e.__traceback__
+            if traceback is None:
+                raise e
+
+            tb_next = traceback.tb_next
+            if tb_next is None:
+                raise e
+
+            procedure = tb_next.tb_frame.f_code.co_name
+            module = os.path.basename(tb_next.tb_frame.f_code.co_filename).split(".")[0]
+            line = tb_next.tb_lineno
+            logging.error(f"""An error occurred in line {line} in procedure {procedure} in module {module}:
+{type(e).__name__}: {e}""")
+            
+            raise e
     return add_try_catch

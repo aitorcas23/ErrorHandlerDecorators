@@ -1,22 +1,13 @@
-from func_attributes import FuncAttributes
-from decorators.error_handlers import custom_error_handler
+from decorators import error_handlers, timers
+from time import sleep
+import logging
 
 
-format = ["An error occurred in line ",
-          FuncAttributes.line,
-          " in procedure ",
-          FuncAttributes.name,
-          " in module ",
-          FuncAttributes.module,
-          ":\n",
-          FuncAttributes.error]
-
-
-@custom_error_handler(format=format, color="Error")
-def a_function(a, b):
+@timers.default_timer
+def a_function(a: int, b: int):
     return (a / b)
 
 
 if __name__ == "__main__":
+    logging.getLogger().setLevel(logging.INFO)
     print(a_function(1, 2))
-    print(a_function(5, 0))
